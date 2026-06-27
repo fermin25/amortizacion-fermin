@@ -1,0 +1,18 @@
+{
+  "name": "FERMIN LIRIANO & ASOCIADOS - Amortización",
+  "short_name": "Amortización",
+  "description": "Generador de tablas de amortización para imprimir o guardar como PDF.",
+  "start_url": "./index.html",
+  "scope": "./",
+  "display": "standalone",
+  "background_color": "#f5f7fb",
+  "theme_color": "#1F4E79",
+  "icons": [
+    {
+      "src": "icon.svg",
+      "sizes": "any",
+      "type": "image/svg+xml",
+      "purpose": "any maskable"
+    }
+  ]
+}

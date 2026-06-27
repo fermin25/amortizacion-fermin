@@ -1,0 +1,24 @@
+APP CELULAR - FERMIN LIRIANO & ASOCIADOS
+
+Esta version no necesita Python ni la laptop como servidor para calcular la tabla.
+
+OPCION RECOMENDADA
+1. Sube la carpeta app_celular completa a un hosting simple:
+   - GitHub Pages
+   - Netlify
+   - Vercel
+   - el hosting de tu pagina web
+2. Abre el enlace desde el celular.
+3. En Android: menu del navegador > Agregar a pantalla principal.
+4. En iPhone: compartir > Agregar a pantalla de inicio.
+5. Despues de abrirla una vez, funciona como app instalada.
+
+USO
+1. Completa los datos del prestamo.
+2. Toca Generar tabla.
+3. Toca PDF / Imprimir.
+4. En el celular elige imprimir, compartir o guardar como PDF.
+
+NOTA
+Si abres index.html directamente como archivo en el celular, la pantalla funciona.
+Para instalarla como app y tener modo offline formal, debe abrirse desde un enlace web HTTPS.
