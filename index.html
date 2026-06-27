@@ -3,17 +3,19 @@
 <head>
   <meta charset="utf-8">
   <meta name="viewport" content="width=device-width, initial-scale=1">
-  <meta name="theme-color" content="#1F4E79">
-  <title>Amortización - FERMIN LIRIANO & ASOCIADOS</title>
+  <meta name="theme-color" content="#09295a">
+  <title>Amortizaci&oacute;n - FERM&Iacute;N LIRIANO & ASOCIADOS</title>
   <link rel="manifest" href="manifest.webmanifest">
+  <script src="jspdf.umd.min.js"></script>
   <style>
     :root {
-      --azul: #1F4E79;
+      --azul: #09295a;
       --azul-fuerte: #0B49B5;
+      --dorado: #C8A24A;
       --borde: #95B3D7;
-      --fondo: #f5f7fb;
-      --texto: #132033;
-      --muted: #5a6c80;
+      --fondo: #f4f7fb;
+      --texto: #142033;
+      --muted: #5b6d82;
     }
 
     * { box-sizing: border-box; }
@@ -28,30 +30,53 @@
     .app-header {
       background: #fff;
       border-bottom: 1px solid #d8e2ef;
-      padding: 18px 14px;
+      padding: 14px;
       text-align: center;
+    }
+
+    .brand-wrap {
+      display: flex;
+      align-items: center;
+      justify-content: center;
+      gap: 14px;
+    }
+
+    .brand-logo {
+      width: 64px;
+      height: 64px;
+      object-fit: contain;
     }
 
     .brand {
       margin: 0;
       color: var(--azul);
-      font-size: clamp(21px, 5vw, 32px);
+      font-size: clamp(22px, 5vw, 32px);
       font-weight: 800;
       letter-spacing: 0;
-      line-height: 1.15;
+      line-height: 1.1;
+    }
+
+    .brand-subtitle {
+      margin: 4px 0 0;
+      color: var(--dorado);
+      font-size: 12px;
+      font-weight: 800;
+      letter-spacing: 1.5px;
+      text-transform: uppercase;
     }
 
     main {
-      width: min(820px, calc(100% - 24px));
+      width: min(920px, calc(100% - 24px));
       margin: 16px auto 36px;
     }
 
-    .panel {
+    .panel,
+    .preview {
       background: #fff;
       border: 1px solid #d9e4f1;
       border-radius: 8px;
       padding: 16px;
-      box-shadow: 0 12px 30px rgba(31, 78, 121, 0.08);
+      box-shadow: 0 12px 30px rgba(9, 41, 90, 0.08);
     }
 
     .grid {
@@ -92,7 +117,7 @@
 
     .actions {
       display: grid;
-      grid-template-columns: 1fr 1fr;
+      grid-template-columns: repeat(2, minmax(0, 1fr));
       gap: 10px;
       margin-top: 16px;
     }
@@ -102,15 +127,18 @@
       border: 0;
       border-radius: 6px;
       padding: 13px 12px;
-      font-size: 16px;
+      font-size: 15px;
       font-weight: 800;
       color: #fff;
       background: var(--azul-fuerte);
       cursor: pointer;
     }
 
-    button.secondary {
-      background: var(--azul);
+    button.secondary { background: var(--azul); }
+
+    button.gold {
+      background: var(--dorado);
+      color: #15213a;
     }
 
     button.light {
@@ -139,22 +167,60 @@
       margin: 13px 0 0;
       color: var(--muted);
       font-size: 13px;
-      line-height: 1.4;
+      line-height: 1.45;
     }
 
     .preview {
       display: none;
       margin-top: 16px;
-      background: #fff;
-      border: 1px solid #d9e4f1;
-      border-radius: 8px;
-      padding: 16px;
+    }
+
+    .preview-head {
+      display: flex;
+      align-items: center;
+      justify-content: space-between;
+      gap: 12px;
+      margin-bottom: 12px;
     }
 
     .preview h2 {
-      margin: 0 0 12px;
+      margin: 0;
       color: var(--azul);
-      font-size: 19px;
+      font-size: 20px;
+    }
+
+    .summary-cards {
+      display: grid;
+      grid-template-columns: repeat(4, minmax(0, 1fr));
+      gap: 10px;
+      margin-bottom: 14px;
+    }
+
+    .summary-card {
+      border: 1px solid #d9e4f1;
+      border-left: 4px solid var(--dorado);
+      border-radius: 8px;
+      padding: 10px;
+      background: #fbfcff;
+      min-width: 0;
+    }
+
+    .summary-label {
+      display: block;
+      color: var(--muted);
+      font-size: 11px;
+      font-weight: 700;
+      letter-spacing: 0.5px;
+      text-transform: uppercase;
+    }
+
+    .summary-value {
+      display: block;
+      margin-top: 4px;
+      color: var(--azul);
+      font-size: 16px;
+      font-weight: 800;
+      overflow-wrap: anywhere;
     }
 
     .scroll-table {
@@ -175,7 +241,7 @@
     }
 
     th {
-      background: var(--azul-fuerte);
+      background: var(--azul);
       color: #fff;
       font-weight: 800;
     }
@@ -187,9 +253,7 @@
       white-space: nowrap;
     }
 
-    #print-area {
-      display: none;
-    }
+    #print-area { display: none; }
 
     .sheet {
       width: 8.5in;
@@ -201,10 +265,17 @@
       font-family: Arial, Helvetica, sans-serif;
     }
 
+    .pdf-logo {
+      display: block;
+      width: 118px;
+      height: auto;
+      margin: 0 auto 8px;
+    }
+
     .pdf-title {
       margin: 0 0 12px;
       text-align: center;
-      color: #1F4E79;
+      color: #09295a;
       font-size: 20px;
       font-weight: 800;
     }
@@ -233,14 +304,15 @@
       font-size: 8.5px;
     }
 
-    .pdf-table th, .pdf-table td {
+    .pdf-table th,
+    .pdf-table td {
       border: 0.8px solid #95B3D7;
       padding: 4px;
       text-align: center;
     }
 
     .pdf-table th {
-      background: #0B49B5;
+      background: #09295a;
       color: #fff;
       font-weight: 800;
     }
@@ -270,26 +342,16 @@
       .panel, .preview { padding: 13px; }
       .grid { grid-template-columns: 1fr; gap: 12px; }
       .actions { grid-template-columns: 1fr; }
+      .brand-wrap { flex-direction: column; gap: 6px; }
+      .brand-logo { width: 78px; height: 78px; }
+      .summary-cards { grid-template-columns: 1fr 1fr; }
     }
 
     @media print {
-      @page {
-        size: letter;
-        margin: 0;
-      }
-
-      body {
-        background: #fff;
-      }
-
-      body > *:not(#print-area) {
-        display: none !important;
-      }
-
-      #print-area {
-        display: block;
-      }
-
+      @page { size: letter; margin: 0; }
+      body { background: #fff; }
+      body > *:not(#print-area) { display: none !important; }
+      #print-area { display: block; }
       .sheet {
         width: 8.5in;
         min-height: 11in;
@@ -301,7 +363,13 @@
 </head>
 <body>
   <header class="app-header">
-    <h1 class="brand">FERMIN LIRIANO & ASOCIADOS</h1>
+    <div class="brand-wrap">
+      <img class="brand-logo" src="logo.png" alt="Logo Fermin Liriano & Asociados">
+      <div>
+        <h1 class="brand">FERM&Iacute;N LIRIANO</h1>
+        <p class="brand-subtitle">&amp; Asociados</p>
+      </div>
+    </div>
   </header>
 
   <main>
@@ -312,47 +380,52 @@
         <div class="grid">
           <div class="field full">
             <label for="cliente">Nombre del cliente</label>
-            <input id="cliente" name="cliente" required value="Jose Antonio Perez Paulino">
+            <input id="cliente" name="cliente" required>
           </div>
 
           <div class="field full">
-            <label for="institucion">Institución o nómina</label>
-            <input id="institucion" name="institucion" placeholder="Opcional" value="Ayuntamiento Esperanza">
+            <label for="institucion">Instituci&oacute;n o n&oacute;mina</label>
+            <input id="institucion" name="institucion" placeholder="Opcional">
           </div>
 
           <div class="field">
-            <label for="monto">Monto del préstamo</label>
-            <input id="monto" name="monto" type="number" min="0.01" step="0.01" required value="150000">
+            <label for="monto">Monto del pr&eacute;stamo</label>
+            <input id="monto" name="monto" type="number" min="0.01" step="0.01" required>
           </div>
 
           <div class="field">
             <label for="tasa">Tasa mensual (%)</label>
-            <input id="tasa" name="tasa" type="number" min="0.01" step="0.01" required value="7">
+            <input id="tasa" name="tasa" type="number" min="0.01" step="0.01" required>
           </div>
 
           <div class="field">
             <label for="cuotas">Cantidad de cuotas</label>
-            <input id="cuotas" name="cuotas" type="number" min="1" step="1" required value="12">
+            <input id="cuotas" name="cuotas" type="number" min="1" step="1" required>
           </div>
 
           <div class="field">
             <label for="fecha">Fecha del primer pago</label>
-            <input id="fecha" name="fecha" type="date" required value="2026-06-30">
+            <input id="fecha" name="fecha" type="date" required>
           </div>
         </div>
 
         <div class="actions">
           <button type="submit">Generar tabla</button>
           <button id="print-btn" class="secondary" type="button" disabled>PDF / Imprimir</button>
+          <button id="share-table-btn" class="gold" type="button" disabled>Compartir tabla PDF</button>
+          <button id="share-note-btn" class="secondary" type="button">Compartir pagar&eacute; PDF</button>
           <button id="reset-btn" class="light" type="button">Limpiar</button>
         </div>
       </form>
 
-      <p class="hint">Esta versión funciona en el celular sin conectarse a la laptop. Para exportar PDF, toca “PDF / Imprimir” y elige guardar como PDF o imprimir.</p>
+      <p class="hint">Para enviar por WhatsApp, genera la tabla y toca &ldquo;Compartir tabla PDF&rdquo;. En el men&uacute; del iPhone eliges WhatsApp y el contacto.</p>
     </section>
 
     <section id="preview" class="preview">
-      <h2>Vista previa</h2>
+      <div class="preview-head">
+        <h2>Vista previa</h2>
+      </div>
+      <div id="summary-cards" class="summary-cards"></div>
       <div class="scroll-table">
         <table id="preview-table"></table>
       </div>
@@ -373,11 +446,15 @@
     const alertBox = document.getElementById("alert");
     const preview = document.getElementById("preview");
     const previewTable = document.getElementById("preview-table");
+    const summaryCards = document.getElementById("summary-cards");
     const printArea = document.getElementById("print-area");
     const printBtn = document.getElementById("print-btn");
+    const shareTableBtn = document.getElementById("share-table-btn");
+    const shareNoteBtn = document.getElementById("share-note-btn");
     const resetBtn = document.getElementById("reset-btn");
 
     let currentData = null;
+    let logoDataUrlPromise = null;
 
     function roundMoney(value) {
       return Math.round((value + Number.EPSILON) * 100) / 100;
@@ -387,9 +464,7 @@
       const result = new Date(date.getTime());
       const day = result.getDate();
       result.setMonth(result.getMonth() + months);
-      if (result.getDate() !== day) {
-        result.setDate(0);
-      }
+      if (result.getDate() !== day) result.setDate(0);
       return result;
     }
 
@@ -402,17 +477,24 @@
 
     function parseLocalDate(value) {
       const match = /^(\d{4})-(\d{2})-(\d{2})$/.exec(value);
-      if (!match) {
-        throw new Error("La fecha de inicio debe ser válida.");
-      }
+      if (!match) throw new Error("La fecha de inicio debe ser v&aacute;lida.");
       const year = Number(match[1]);
       const month = Number(match[2]) - 1;
       const day = Number(match[3]);
       const date = new Date(year, month, day);
       if (date.getFullYear() !== year || date.getMonth() !== month || date.getDate() !== day) {
-        throw new Error("La fecha de inicio debe ser válida.");
+        throw new Error("La fecha de inicio debe ser v&aacute;lida.");
       }
       return date;
+    }
+
+    function escapeHtml(value) {
+      return String(value)
+        .replaceAll("&", "&amp;")
+        .replaceAll("<", "&lt;")
+        .replaceAll(">", "&gt;")
+        .replaceAll('"', "&quot;")
+        .replaceAll("'", "&#039;");
     }
 
     function getInputData() {
@@ -424,7 +506,7 @@
       const fechaInicio = parseLocalDate(form.fecha.value);
 
       if (!cliente) throw new Error("Debe ingresar el nombre del cliente.");
-      if (!(monto > 0)) throw new Error("El monto del préstamo debe ser mayor que 0.");
+      if (!(monto > 0)) throw new Error("El monto del pr&eacute;stamo debe ser mayor que 0.");
       if (!(tasa > 0)) throw new Error("La tasa mensual debe ser mayor que 0.");
       if (!Number.isInteger(cuotas) || cuotas <= 0) throw new Error("La cantidad de cuotas debe ser mayor que 0.");
 
@@ -480,13 +562,23 @@
       `;
     }
 
+    function renderSummary(data, result) {
+      summaryCards.innerHTML = `
+        <div class="summary-card"><span class="summary-label">Cliente</span><span class="summary-value">${escapeHtml(data.cliente)}</span></div>
+        <div class="summary-card"><span class="summary-label">Monto</span><span class="summary-value">${moneda.format(data.monto)}</span></div>
+        <div class="summary-card"><span class="summary-label">Cuota mensual</span><span class="summary-value">${moneda.format(result.cuota)}</span></div>
+        <div class="summary-card"><span class="summary-label">Fecha t&eacute;rmino</span><span class="summary-value">${formatDate(result.fechaTermino)}</span></div>
+      `;
+    }
+
     function renderPreview(data, result) {
+      renderSummary(data, result);
       previewTable.innerHTML = `
         <thead>
           <tr>
             <th>Periodo</th>
             <th>Saldo Inicial</th>
-            <th>Interés</th>
+            <th>Inter&eacute;s</th>
             <th>Abono a capital</th>
             <th>Cuota</th>
             <th>Saldo Restante</th>
@@ -501,8 +593,9 @@
       const clientePdf = data.institucion ? `${data.cliente} / ${data.institucion}` : data.cliente;
       printArea.innerHTML = `
         <div class="sheet">
-          <h1 class="pdf-title">FERMIN LIRIANO & ASOCIADOS</h1>
-          <p class="client-line"><strong>CLIENTE:</strong> ${clientePdf}</p>
+          <img class="pdf-logo" src="logo.png" alt="Logo">
+          <h1 class="pdf-title">FERM&Iacute;N LIRIANO &amp; ASOCIADOS</h1>
+          <p class="client-line"><strong>CLIENTE:</strong> ${escapeHtml(clientePdf)}</p>
 
           <table class="summary-table">
             <tbody>
@@ -519,7 +612,7 @@
                 <td>${formatDate(data.fechaInicio)}</td>
               </tr>
               <tr>
-                <td>Fecha término</td>
+                <td>Fecha t&eacute;rmino</td>
                 <td>${formatDate(result.fechaTermino)}</td>
                 <td></td>
                 <td></td>
@@ -532,7 +625,7 @@
               <tr>
                 <th>Periodo</th>
                 <th>Saldo Inicial</th>
-                <th>Interés</th>
+                <th>Inter&eacute;s</th>
                 <th>Abono a capital</th>
                 <th>Cuota</th>
                 <th>Saldo Restante</th>
@@ -559,14 +652,191 @@
       `;
     }
 
+    function cleanFileName(value) {
+      return value.normalize("NFD")
+        .replace(/[\u0300-\u036f]/g, "")
+        .replace(/[^a-zA-Z0-9]+/g, "_")
+        .replace(/^_+|_+$/g, "") || "Cliente";
+    }
+
     function showError(message) {
-      alertBox.textContent = message;
+      alertBox.innerHTML = message;
       alertBox.style.display = "block";
     }
 
     function clearError() {
       alertBox.textContent = "";
       alertBox.style.display = "none";
+    }
+
+    function getLogoDataUrl() {
+      if (!logoDataUrlPromise) {
+        logoDataUrlPromise = fetch("logo.png")
+          .then((response) => response.blob())
+          .then((blob) => new Promise((resolve, reject) => {
+            const reader = new FileReader();
+            reader.onload = () => resolve(reader.result);
+            reader.onerror = reject;
+            reader.readAsDataURL(blob);
+          }))
+          .catch(() => null);
+      }
+      return logoDataUrlPromise;
+    }
+
+    function drawCenteredText(doc, text, y, size, bold = false, color = [9, 41, 90]) {
+      doc.setFont("helvetica", bold ? "bold" : "normal");
+      doc.setFontSize(size);
+      doc.setTextColor(...color);
+      doc.text(text, 306, y, { align: "center" });
+    }
+
+    function drawTableHeader(doc, y, x, widths) {
+      const headers = ["Periodo", "Saldo Inicial", "Interes", "Abono a capital", "Cuota", "Saldo Restante"];
+      doc.setFillColor(9, 41, 90);
+      doc.setDrawColor(149, 179, 215);
+      doc.setLineWidth(0.8);
+      doc.setTextColor(255, 255, 255);
+      doc.setFont("helvetica", "bold");
+      doc.setFontSize(8);
+
+      let currentX = x;
+      headers.forEach((header, index) => {
+        doc.rect(currentX, y, widths[index], 22, "FD");
+        doc.text(header, currentX + widths[index] / 2, y + 14, { align: "center" });
+        currentX += widths[index];
+      });
+      return y + 22;
+    }
+
+    async function buildAmortizationPdf(data, result) {
+      const { jsPDF } = window.jspdf;
+      const doc = new jsPDF({ orientation: "portrait", unit: "pt", format: "letter" });
+      const logo = await getLogoDataUrl();
+      const left = 50;
+      const widths = [50, 82, 70, 92, 70, 86];
+      const rowHeight = 20;
+      let y = 48;
+
+      if (logo) {
+        try {
+          doc.addImage(logo, "PNG", 246, y, 120, 67);
+          y += 78;
+        } catch (error) {
+          y += 8;
+        }
+      }
+
+      drawCenteredText(doc, "FERMIN LIRIANO & ASOCIADOS", y, 20, true);
+      y += 26;
+
+      const clientePdf = data.institucion ? `${data.cliente} / ${data.institucion}` : data.cliente;
+      doc.setFont("helvetica", "bold");
+      doc.setFontSize(10);
+      doc.setTextColor(0, 0, 0);
+      doc.text("CLIENTE:", left, y);
+      doc.setFont("helvetica", "normal");
+      doc.text(clientePdf, left + 52, y);
+      y += 18;
+
+      const summary = [
+        ["Monto", moneda.format(data.monto), "Tasa", `${data.tasa}% mensual`],
+        ["Cuotas", String(data.cuotas), "Fecha inicio", formatDate(data.fechaInicio)],
+        ["Fecha termino", formatDate(result.fechaTermino), "", ""]
+      ];
+      const summaryWidths = [115, 115, 115, 115];
+      doc.setFontSize(9);
+      doc.setDrawColor(149, 179, 215);
+      summary.forEach((row) => {
+        let x = 76;
+        row.forEach((cell, index) => {
+          doc.rect(x, y, summaryWidths[index], 24);
+          doc.text(cell, x + summaryWidths[index] / 2, y + 15, { align: "center" });
+          x += summaryWidths[index];
+        });
+        y += 24;
+      });
+
+      y += 18;
+      y = drawTableHeader(doc, y, left, widths);
+      doc.setFont("helvetica", "normal");
+      doc.setFontSize(8);
+      doc.setTextColor(0, 0, 0);
+
+      result.rows.forEach((row) => {
+        if (y + rowHeight > 710) {
+          doc.addPage();
+          y = 50;
+          y = drawTableHeader(doc, y, left, widths);
+          doc.setFont("helvetica", "normal");
+          doc.setFontSize(8);
+          doc.setTextColor(0, 0, 0);
+        }
+
+        const values = [
+          String(row.periodo),
+          moneda.format(row.saldoInicial),
+          moneda.format(row.interes),
+          moneda.format(row.abonoCapital),
+          moneda.format(row.cuota),
+          moneda.format(row.saldoRestante)
+        ];
+        let x = left;
+        values.forEach((cell, index) => {
+          doc.rect(x, y, widths[index], rowHeight);
+          doc.text(cell, x + widths[index] / 2, y + 13, { align: "center" });
+          x += widths[index];
+        });
+        y += rowHeight;
+      });
+
+      y += 22;
+      if (y > 650) {
+        doc.addPage();
+        y = 70;
+      }
+      doc.setFont("helvetica", "bold");
+      doc.setFontSize(11);
+      doc.text(`Cuota mensual: ${moneda.format(result.cuota)}`, left, y);
+      y += 78;
+
+      doc.setFont("helvetica", "normal");
+      doc.setFontSize(9);
+      doc.text("______________________________", 165, y, { align: "center" });
+      doc.text("______________________________", 445, y, { align: "center" });
+      y += 22;
+      doc.text("Firma del cliente", 165, y, { align: "center" });
+      doc.text("Firma del empleado", 445, y, { align: "center" });
+
+      return doc.output("blob");
+    }
+
+    async function sharePdf(blob, filename, title) {
+      const file = new File([blob], filename, { type: "application/pdf" });
+      const shareData = {
+        title,
+        text: "Documento generado por FERMIN LIRIANO & ASOCIADOS.",
+        files: [file]
+      };
+
+      if (navigator.canShare && navigator.canShare({ files: [file] })) {
+        try {
+          await navigator.share(shareData);
+          return;
+        } catch (error) {
+          if (error.name === "AbortError") return;
+        }
+      }
+
+      const url = URL.createObjectURL(blob);
+      const link = document.createElement("a");
+      link.href = url;
+      link.download = filename;
+      document.body.appendChild(link);
+      link.click();
+      link.remove();
+      URL.revokeObjectURL(url);
+      showError("Tu navegador no permiti&oacute; compartir el PDF directo. Descargu&eacute; el archivo para que puedas enviarlo manualmente por WhatsApp.");
     }
 
     form.addEventListener("submit", (event) => {
@@ -580,9 +850,11 @@
         renderPreview(data, result);
         renderPrintSheet(data, result);
         printBtn.disabled = false;
+        shareTableBtn.disabled = false;
       } catch (error) {
         currentData = null;
         printBtn.disabled = true;
+        shareTableBtn.disabled = true;
         preview.style.display = "none";
         printArea.innerHTML = "";
         showError(error.message);
@@ -594,12 +866,41 @@
       window.print();
     });
 
+    shareTableBtn.addEventListener("click", async () => {
+      if (!currentData) return;
+      clearError();
+      shareTableBtn.disabled = true;
+      shareTableBtn.textContent = "Preparando PDF...";
+
+      try {
+        const { data, result } = currentData;
+        const blob = await buildAmortizationPdf(data, result);
+        const filename = `Tabla_Amortizacion_${cleanFileName(data.cliente)}.pdf`;
+        await sharePdf(blob, filename, "Tabla de amortizacion");
+      } catch (error) {
+        showError(`No se pudo compartir el PDF. Intenta con PDF / Imprimir. Detalle: ${escapeHtml(error.message || "error desconocido")}`);
+      } finally {
+        shareTableBtn.disabled = false;
+        shareTableBtn.textContent = "Compartir tabla PDF";
+      }
+    });
+
+    shareNoteBtn.addEventListener("click", () => {
+      showError("El pagar&eacute; ser&aacute; el segundo PDF. Para activarlo necesito la plantilla legal y los campos adicionales como c&eacute;dula, direcci&oacute;n y monto en letras.");
+    });
+
     resetBtn.addEventListener("click", () => {
       form.reset();
+      Array.from(form.elements).forEach((field) => {
+        if ("value" in field) field.value = "";
+      });
       currentData = null;
       printBtn.disabled = true;
+      shareTableBtn.disabled = true;
       preview.style.display = "none";
       printArea.innerHTML = "";
+      summaryCards.innerHTML = "";
+      previewTable.innerHTML = "";
       clearError();
     });
 

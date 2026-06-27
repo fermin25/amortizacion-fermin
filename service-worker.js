@@ -1,9 +1,11 @@
-const CACHE_NAME = "fermin-amortizacion-v1";
+const CACHE_NAME = "fermin-amortizacion-v3";
 const ASSETS = [
   "./",
   "./index.html",
   "./manifest.webmanifest",
-  "./icon.svg"
+  "./icon.svg",
+  "./logo.png",
+  "./jspdf.umd.min.js"
 ];
 
 self.addEventListener("install", (event) => {
