@@ -383,6 +383,16 @@
             <input id="cliente" name="cliente" required>
           </div>
 
+          <div class="field">
+            <label for="cedula">C&eacute;dula del cliente</label>
+            <input id="cedula" name="cedula" placeholder="000-0000000-0">
+          </div>
+
+          <div class="field">
+            <label for="direccion">Direcci&oacute;n del cliente</label>
+            <input id="direccion" name="direccion" placeholder="Calle, sector, ciudad">
+          </div>
+
           <div class="field full">
             <label for="institucion">Instituci&oacute;n o n&oacute;mina</label>
             <input id="institucion" name="institucion" placeholder="Opcional">
@@ -413,7 +423,7 @@
           <button type="submit">Generar tabla</button>
           <button id="print-btn" class="secondary" type="button" disabled>PDF / Imprimir</button>
           <button id="share-table-btn" class="gold" type="button" disabled>Compartir tabla PDF</button>
-          <button id="share-note-btn" class="secondary" type="button">Compartir pagar&eacute; PDF</button>
+          <button id="share-note-btn" class="secondary" type="button" disabled>Compartir pagar&eacute; PDF</button>
           <button id="reset-btn" class="light" type="button">Limpiar</button>
         </div>
       </form>
@@ -499,6 +509,8 @@
 
     function getInputData() {
       const cliente = form.cliente.value.trim();
+      const cedula = form.cedula.value.trim();
+      const direccion = form.direccion.value.trim();
       const institucion = form.institucion.value.trim();
       const monto = Number(form.monto.value);
       const tasa = Number(form.tasa.value);
@@ -510,7 +522,7 @@
       if (!(tasa > 0)) throw new Error("La tasa mensual debe ser mayor que 0.");
       if (!Number.isInteger(cuotas) || cuotas <= 0) throw new Error("La cantidad de cuotas debe ser mayor que 0.");
 
-      return { cliente, institucion, monto, tasa, cuotas, fechaInicio };
+      return { cliente, cedula, direccion, institucion, monto, tasa, cuotas, fechaInicio };
     }
 
     function calculateSchedule(data) {
@@ -811,6 +823,191 @@
       return doc.output("blob");
     }
 
+    const unidades = ["", "uno", "dos", "tres", "cuatro", "cinco", "seis", "siete", "ocho", "nueve"];
+    const especiales = {
+      10: "diez", 11: "once", 12: "doce", 13: "trece", 14: "catorce", 15: "quince",
+      16: "dieciseis", 17: "diecisiete", 18: "dieciocho", 19: "diecinueve",
+      20: "veinte", 21: "veintiuno", 22: "veintidos", 23: "veintitres", 24: "veinticuatro",
+      25: "veinticinco", 26: "veintiseis", 27: "veintisiete", 28: "veintiocho", 29: "veintinueve"
+    };
+    const decenas = ["", "", "veinte", "treinta", "cuarenta", "cincuenta", "sesenta", "setenta", "ochenta", "noventa"];
+    const centenas = ["", "ciento", "doscientos", "trescientos", "cuatrocientos", "quinientos", "seiscientos", "setecientos", "ochocientos", "novecientos"];
+    const meses = ["enero", "febrero", "marzo", "abril", "mayo", "junio", "julio", "agosto", "septiembre", "octubre", "noviembre", "diciembre"];
+
+    function numberToSpanishUnderThousand(number) {
+      if (number === 0) return "";
+      if (number === 100) return "cien";
+      if (number < 10) return unidades[number];
+      if (number < 30) return especiales[number];
+      if (number < 100) {
+        const ten = Math.floor(number / 10);
+        const unit = number % 10;
+        return unit ? `${decenas[ten]} y ${unidades[unit]}` : decenas[ten];
+      }
+      const hundred = Math.floor(number / 100);
+      const rest = number % 100;
+      return rest ? `${centenas[hundred]} ${numberToSpanishUnderThousand(rest)}` : centenas[hundred];
+    }
+
+    function numberToSpanish(number) {
+      const n = Math.round(Math.abs(number));
+      if (n === 0) return "cero";
+      if (n < 1000) return numberToSpanishUnderThousand(n);
+
+      const millions = Math.floor(n / 1000000);
+      const thousands = Math.floor((n % 1000000) / 1000);
+      const rest = n % 1000;
+      const parts = [];
+
+      if (millions) parts.push(millions === 1 ? "un millon" : `${numberToSpanish(millions)} millones`);
+      if (thousands) parts.push(thousands === 1 ? "mil" : `${numberToSpanishUnderThousand(thousands)} mil`);
+      if (rest) parts.push(numberToSpanishUnderThousand(rest));
+      return parts.join(" ");
+    }
+
+    function upperSpanish(number) {
+      return numberToSpanish(number).toUpperCase();
+    }
+
+    function formatLegalMoney(value) {
+      return `RD$ ${Number(value).toLocaleString("en-US", { minimumFractionDigits: 2, maximumFractionDigits: 2 })}`;
+    }
+
+    function legalDay(date) {
+      return `${numberToSpanish(date.getDate())} (${date.getDate()})`;
+    }
+
+    function legalYear(date) {
+      return `${upperSpanish(date.getFullYear()).replace("UN MIL", "MIL")} (${date.getFullYear()})`;
+    }
+
+    function legalFullDate(date) {
+      return `a los ${legalDay(date)} dias de ${meses[date.getMonth()]} del ano ${legalYear(date)}`;
+    }
+
+    function legalMonthlyDay(date) {
+      return `los dias ${legalDay(date)} de cada mes`;
+    }
+
+    function addWrappedParagraph(doc, text, x, y, maxWidth, lineHeight, options = {}) {
+      doc.setFont("helvetica", options.bold ? "bold" : "normal");
+      doc.setFontSize(options.size || 9.5);
+      doc.setTextColor(0, 0, 0);
+      const lines = doc.splitTextToSize(text, maxWidth);
+      lines.forEach((line) => {
+        if (y > 735) {
+          doc.addPage();
+          y = 55;
+        }
+        doc.text(line, x, y, { align: options.align || "justify", maxWidth });
+        y += lineHeight;
+      });
+      return y;
+    }
+
+    async function buildPromissoryNotePdf(data, result) {
+      if (!data.cedula) throw new Error("Debe ingresar la cedula del cliente para generar el pagare.");
+      if (!data.direccion) throw new Error("Debe ingresar la direccion del cliente para generar el pagare.");
+
+      const { jsPDF } = window.jspdf;
+      const doc = new jsPDF({ orientation: "portrait", unit: "pt", format: "letter" });
+      const logo = await getLogoDataUrl();
+      const x = 54;
+      const maxWidth = 504;
+      let y = 48;
+
+      if (logo) {
+        try {
+          doc.addImage(logo, "PNG", 246, y, 120, 67);
+          y += 78;
+        } catch (error) {
+          y += 8;
+        }
+      }
+
+      doc.setFont("helvetica", "bold");
+      doc.setFontSize(11);
+      doc.text("EN NOMBRE DE LA REPUBLICA", x, y);
+      doc.text("PAGARE NOTARIAL", 558, y, { align: "right" });
+      y += 25;
+
+      doc.setFont("helvetica", "normal");
+      doc.setFontSize(9.5);
+      doc.text("Acto No. _______________ (       )", x, y);
+      doc.text("Folio No. __________________ (       )", 558, y, { align: "right" });
+      y += 22;
+
+      const cliente = data.cliente.toUpperCase();
+      const cedula = data.cedula;
+      const direccion = data.direccion;
+      const montoLetras = `${upperSpanish(data.monto)} PESOS`;
+      const cuotasLetras = upperSpanish(data.cuotas);
+      const tasaLetras = Number.isInteger(data.tasa) ? numberToSpanish(data.tasa) : String(data.tasa);
+      const fechaTermino = result.fechaTermino;
+      const acreedor = "KELVI GABRIEL FERMIN MOREL";
+
+      const body = [
+        `En la ciudad de Laguna Salada, Provincia Valverde, Republica Dominicana, ${legalFullDate(data.fechaInicio)}. Por ante mi, LIC. KELVIN ALEXANDER VENTURA GONZALEZ, Notario Publico de los del Numero para el Municipio de Laguna Salada, colegiatura No. 7589, de nacionalidad dominicana, mayor de edad, abogado, provisto de la cedula de identidad y electoral No. 092-0014090-4, con estudio profesional abierto en la calle Duarte esquina Quirino Acosta No. 97 de esta ciudad de Laguna Salada, encontrandome en mi despacho y en el regular ejercicio de mis funciones, COMPARECIO libre y voluntariamente, el senor ${cliente}, de nacionalidad dominicana, mayor de edad, portador de la Cedula de Identidad y Electoral Numero ${cedula}, domiciliado y residente en ${direccion}, en su calidad de DEUDOR y ME HA DECLARADO bajo la fe del juramento lo siguiente:`,
+        `PRIMERO: Que se reconoce por medio del presente acto, DEUDOR, del senor ${acreedor}, de nacionalidad dominicana, mayor de edad, de ocupacion estudiante, portador de la cedula de identidad y electoral No. 402-2002338-2, domiciliado y residente en la Calle Eclipse, Sol de Luz, casa No. 5, sector Santa Cruz, del municipio Santo Domingo Norte, Republica Dominicana y accidentalmente en el Municipio de Laguna Salada, por la suma de ${montoLetras} (${formatLegalMoney(data.monto)}), suma esta que pagara en ${cuotasLetras} (${data.cuotas}) cuotas mensuales ${legalMonthlyDay(data.fechaInicio)} a partir de la firma del presente acto, con vencimiento el dia ${legalDay(fechaTermino)} de ${meses[fechaTermino.getMonth()].toUpperCase()} del ano ${fechaTermino.getFullYear()}, y generara un ${tasaLetras} por ciento (${data.tasa}%) de interes mensual.`,
+        `SEGUNDO: Que el senor ${cliente}, constituye y acepta que la firma de este acto esta basada sobre un pagare notarial en favor del senor ${acreedor}.`,
+        `TERCERO: El presente pagare notarial quedara resuelto de pleno derecho y exigible en su totalidad de la deuda al beneficio del termino del presente pagare y dejado de pagar, quedando EL ACREEDOR, senor ${acreedor}, en tiempo habil para ejecutar el presente pagare con todas sus consecuencias legales, sin previa gestion judicial o extrajudicial alguna sobre los bienes activos y pasivos del DEUDOR, senor ${cliente}.`,
+        `CUARTO: EL DEUDOR, senor ${cliente}, autoriza y faculta al ACREEDOR, senor ${acreedor}, para que en caso de incumplimiento de este pagare notarial pueda apropiarse de cualquier bien mueble o inmueble que este en su mano o en manos de un tercero, para con el mismo cubrir el pago del capital, accesorios o derechos que nacieran de toda deuda vencida de este contrato.`,
+        `QUINTO: Las partes han decidido dar su consentimiento a fin de que este pagare notarial tenga su condicion de titulo ejecutorio con la misma fuerza que una sentencia judicial con autoridad de la cosa irrevocablemente juzgada, renunciando al fuero de domicilio y comprometiendo todos los bienes presentes y futuros para el cumplimiento del presente pagare.`,
+        `SEXTO: Para lo no estipulado en el presente pagare notarial, las partes se remiten al derecho comun.`,
+        `SEPTIMO: EL DEUDOR, senor ${cliente}, acepta que para los fines y consecuencias legales del presente acto reconoce la operatividad del articulo 545 del Codigo de Procedimiento Civil de la Republica Dominicana.`,
+        `OCTAVO: EL DEUDOR, senor ${cliente}, avala como buenos y validos todos los ordinales senalados anteriormente, contentivos en las obligaciones contraidas con el ACREEDOR, senor ${acreedor}.`,
+        `HECHO, REDACTADO, TRANSCRITO Y FIRMADO en dos originales, en mi presencia, y en presencia de los senores MIGUEL LIRIANO, de nacionalidad dominicano, mayor de edad, soltero, portador de la cedula de identidad y electoral No. 033-0021439-6, domiciliado y residente en el Municipio de Esperanza, Provincia Valverde, Republica Dominicana y BELGICA RAMONA COLON, de nacionalidad dominicana, mayor de edad, portadora de la cedula de identidad y electoral Numero 033-0018208-0, domiciliada y residente en el Municipio de Esperanza, Provincia Valverde, Republica Dominicana, acto este al cual he dado lectura en alta voz en presencia de los comparecientes y testigos, quienes despues de aprobarlo, lo han firmado ante mi y junto conmigo, considerandolo BUENO Y VALIDO, por la suma de ${montoLetras} (${formatLegalMoney(data.monto)}). Asi lo dijeron ante mi Notario Publico. En testimonio de lo que antecede se redacta el presente Acto, al cual le he dado lectura en alta voz a los comparecientes, quienes despues de encontrarlo conforme proceden a firmarlo juntos conmigo y ante mi, Notario Publico, por lo cual certifico y doy fe.`
+      ];
+
+      body.forEach((paragraph) => {
+        y = addWrappedParagraph(doc, paragraph, x, y, maxWidth, 13);
+        y += 7;
+      });
+
+      if (y > 610) {
+        doc.addPage();
+        y = 90;
+      } else {
+        y += 28;
+      }
+
+      doc.setFont("helvetica", "normal");
+      doc.setFontSize(9.5);
+      doc.text("______________________________", 170, y, { align: "center" });
+      doc.text("______________________________", 442, y, { align: "center" });
+      y += 16;
+      doc.setFont("helvetica", "bold");
+      doc.text(cliente, 170, y, { align: "center" });
+      doc.text(acreedor, 442, y, { align: "center" });
+      y += 14;
+      doc.setFont("helvetica", "normal");
+      doc.text("DEUDOR", 170, y, { align: "center" });
+      doc.text("ACREEDOR", 442, y, { align: "center" });
+      y += 54;
+
+      doc.text("______________________________", 170, y, { align: "center" });
+      doc.text("______________________________", 442, y, { align: "center" });
+      y += 16;
+      doc.setFont("helvetica", "bold");
+      doc.text("MIGUEL LIRIANO", 170, y, { align: "center" });
+      doc.text("BELGICA RAMONA COLON", 442, y, { align: "center" });
+      y += 14;
+      doc.setFont("helvetica", "normal");
+      doc.text("Testigo", 170, y, { align: "center" });
+      doc.text("Testigo", 442, y, { align: "center" });
+      y += 66;
+
+      doc.text("___________________________________", 306, y, { align: "center" });
+      y += 16;
+      doc.setFont("helvetica", "bold");
+      doc.text("LIC. KELVIN ALEXANDER VENTURA GONZALEZ", 306, y, { align: "center" });
+      y += 14;
+      doc.setFont("helvetica", "normal");
+      doc.text("Notario Publico", 306, y, { align: "center" });
+
+      return doc.output("blob");
+    }
+
     async function sharePdf(blob, filename, title) {
       const file = new File([blob], filename, { type: "application/pdf" });
       const shareData = {
@@ -851,10 +1048,12 @@
         renderPrintSheet(data, result);
         printBtn.disabled = false;
         shareTableBtn.disabled = false;
+        shareNoteBtn.disabled = false;
       } catch (error) {
         currentData = null;
         printBtn.disabled = true;
         shareTableBtn.disabled = true;
+        shareNoteBtn.disabled = true;
         preview.style.display = "none";
         printArea.innerHTML = "";
         showError(error.message);
@@ -885,8 +1084,23 @@
       }
     });
 
-    shareNoteBtn.addEventListener("click", () => {
-      showError("El pagar&eacute; ser&aacute; el segundo PDF. Para activarlo necesito la plantilla legal y los campos adicionales como c&eacute;dula, direcci&oacute;n y monto en letras.");
+    shareNoteBtn.addEventListener("click", async () => {
+      if (!currentData) return;
+      clearError();
+      shareNoteBtn.disabled = true;
+      shareNoteBtn.textContent = "Preparando pagar&eacute;...";
+
+      try {
+        const { data, result } = currentData;
+        const blob = await buildPromissoryNotePdf(data, result);
+        const filename = `Pagare_Notarial_${cleanFileName(data.cliente)}.pdf`;
+        await sharePdf(blob, filename, "Pagare notarial");
+      } catch (error) {
+        showError(`No se pudo generar el pagar&eacute;. Detalle: ${escapeHtml(error.message || "error desconocido")}`);
+      } finally {
+        shareNoteBtn.disabled = false;
+        shareNoteBtn.textContent = "Compartir pagar&eacute; PDF";
+      }
     });
 
     resetBtn.addEventListener("click", () => {
@@ -897,6 +1111,7 @@
       currentData = null;
       printBtn.disabled = true;
       shareTableBtn.disabled = true;
+      shareNoteBtn.disabled = true;
       preview.style.display = "none";
       printArea.innerHTML = "";
       summaryCards.innerHTML = "";

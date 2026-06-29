@@ -1,4 +1,4 @@
-const CACHE_NAME = "fermin-amortizacion-v3";
+const CACHE_NAME = "fermin-amortizacion-v4";
 const ASSETS = [
   "./",
   "./index.html",
