@@ -1,10 +1,11 @@
-const CACHE_NAME = "fermin-amortizacion-v4";
+const CACHE_NAME = "fermin-amortizacion-v9";
 const ASSETS = [
   "./",
   "./index.html",
   "./manifest.webmanifest",
   "./icon.svg",
   "./logo.png",
+  "./logo_header.png",
   "./jspdf.umd.min.js"
 ];
 

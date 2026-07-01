@@ -267,13 +267,14 @@
 
     .pdf-logo {
       display: block;
-      width: 118px;
+      width: 250px;
       height: auto;
-      margin: 0 auto 8px;
+      margin: 0 auto 2px;
     }
 
     .pdf-title {
-      margin: 0 0 12px;
+      display: none;
+      margin: 0;
       text-align: center;
       color: #09295a;
       font-size: 20px;
@@ -281,34 +282,34 @@
     }
 
     .client-line {
-      margin: 0 0 12px;
-      font-size: 10px;
-      line-height: 13px;
+      margin: 0 0 14px;
+      font-size: 13px;
+      line-height: 16px;
     }
 
     .summary-table {
-      width: 460px;
-      margin: 0 auto 18px;
-      font-size: 9px;
+      width: 100%;
+      margin: 0 auto 24px;
+      font-size: 12px;
     }
 
     .summary-table td {
       border: 0.8px solid #95B3D7;
-      padding: 5px;
-      text-align: center;
+      padding: 7px 9px;
+      text-align: left;
     }
 
     .pdf-table {
-      width: 490px;
+      width: 100%;
       margin: 0 auto;
-      font-size: 8.5px;
+      font-size: 12px;
     }
 
     .pdf-table th,
     .pdf-table td {
       border: 0.8px solid #95B3D7;
-      padding: 4px;
-      text-align: center;
+      padding: 6px 8px;
+      text-align: left;
     }
 
     .pdf-table th {
@@ -318,16 +319,16 @@
     }
 
     .monthly {
-      margin: 12px 0 0;
-      font-size: 11px;
+      margin: 24px 0 0;
+      font-size: 13px;
       font-weight: 800;
     }
 
     .signatures {
       width: 440px;
-      margin: 65px auto 0;
+      margin: 86px auto 0;
       border-collapse: collapse;
-      font-size: 9px;
+      font-size: 12px;
     }
 
     .signatures td {
@@ -450,6 +451,13 @@
       currency: "USD",
       minimumFractionDigits: 2,
       maximumFractionDigits: 2
+    });
+
+    const monedaEntera = new Intl.NumberFormat("en-US", {
+      style: "currency",
+      currency: "USD",
+      minimumFractionDigits: 0,
+      maximumFractionDigits: 0
     });
 
     const form = document.getElementById("loan-form");
@@ -605,7 +613,7 @@
       const clientePdf = data.institucion ? `${data.cliente} / ${data.institucion}` : data.cliente;
       printArea.innerHTML = `
         <div class="sheet">
-          <img class="pdf-logo" src="logo.png" alt="Logo">
+          <img class="pdf-logo" src="logo_header.png" alt="Logo">
           <h1 class="pdf-title">FERM&Iacute;N LIRIANO &amp; ASOCIADOS</h1>
           <p class="client-line"><strong>CLIENTE:</strong> ${escapeHtml(clientePdf)}</p>
 
@@ -613,7 +621,7 @@
             <tbody>
               <tr>
                 <td>Monto</td>
-                <td>${moneda.format(data.monto)}</td>
+                <td>${monedaEntera.format(data.monto)}</td>
                 <td>Tasa</td>
                 <td>${data.tasa}% mensual</td>
               </tr>
@@ -683,7 +691,7 @@
 
     function getLogoDataUrl() {
       if (!logoDataUrlPromise) {
-        logoDataUrlPromise = fetch("logo.png")
+        logoDataUrlPromise = fetch("logo_header.png")
           .then((response) => response.blob())
           .then((blob) => new Promise((resolve, reject) => {
             const reader = new FileReader();
@@ -704,18 +712,19 @@
     }
 
     function drawTableHeader(doc, y, x, widths) {
-      const headers = ["Periodo", "Saldo Inicial", "Interes", "Abono a capital", "Cuota", "Saldo Restante"];
+      const headers = ["Periodo", "Saldo Inicial", "Interés", "Abono a capital", "Cuota", "Saldo Restante"];
       doc.setFillColor(9, 41, 90);
       doc.setDrawColor(149, 179, 215);
       doc.setLineWidth(0.8);
       doc.setTextColor(255, 255, 255);
       doc.setFont("helvetica", "bold");
-      doc.setFontSize(8);
+      doc.setFontSize(10);
 
       let currentX = x;
       headers.forEach((header, index) => {
+        doc.setFillColor(9, 41, 90);
         doc.rect(currentX, y, widths[index], 22, "FD");
-        doc.text(header, currentX + widths[index] / 2, y + 14, { align: "center" });
+        doc.text(header, currentX + 7, y + 15);
         currentX += widths[index];
       });
       return y + 22;
@@ -725,26 +734,23 @@
       const { jsPDF } = window.jspdf;
       const doc = new jsPDF({ orientation: "portrait", unit: "pt", format: "letter" });
       const logo = await getLogoDataUrl();
-      const left = 50;
-      const widths = [50, 82, 70, 92, 70, 86];
+      const left = 61;
+      const widths = [60, 90, 75, 100, 75, 90];
       const rowHeight = 20;
-      let y = 48;
+      let y = 30;
 
       if (logo) {
         try {
-          doc.addImage(logo, "PNG", 246, y, 120, 67);
-          y += 78;
+          doc.addImage(logo, "PNG", 201, y, 210, 127);
+          y += 135;
         } catch (error) {
-          y += 8;
+          y += 26;
         }
       }
 
-      drawCenteredText(doc, "FERMIN LIRIANO & ASOCIADOS", y, 20, true);
-      y += 26;
-
       const clientePdf = data.institucion ? `${data.cliente} / ${data.institucion}` : data.cliente;
       doc.setFont("helvetica", "bold");
-      doc.setFontSize(10);
+      doc.setFontSize(10.5);
       doc.setTextColor(0, 0, 0);
       doc.text("CLIENTE:", left, y);
       doc.setFont("helvetica", "normal");
@@ -752,18 +758,19 @@
       y += 18;
 
       const summary = [
-        ["Monto", moneda.format(data.monto), "Tasa", `${data.tasa}% mensual`],
+        ["Monto", monedaEntera.format(data.monto), "Tasa", `${data.tasa}% mensual`],
         ["Cuotas", String(data.cuotas), "Fecha inicio", formatDate(data.fechaInicio)],
-        ["Fecha termino", formatDate(result.fechaTermino), "", ""]
+        ["Fecha término", formatDate(result.fechaTermino), "", ""]
       ];
       const summaryWidths = [115, 115, 115, 115];
-      doc.setFontSize(9);
+      doc.setFont("helvetica", "normal");
+      doc.setFontSize(10);
       doc.setDrawColor(149, 179, 215);
       summary.forEach((row) => {
         let x = 76;
         row.forEach((cell, index) => {
           doc.rect(x, y, summaryWidths[index], 24);
-          doc.text(cell, x + summaryWidths[index] / 2, y + 15, { align: "center" });
+          doc.text(cell, x + 7, y + 15);
           x += summaryWidths[index];
         });
         y += 24;
@@ -772,7 +779,7 @@
       y += 18;
       y = drawTableHeader(doc, y, left, widths);
       doc.setFont("helvetica", "normal");
-      doc.setFontSize(8);
+      doc.setFontSize(10);
       doc.setTextColor(0, 0, 0);
 
       result.rows.forEach((row) => {
@@ -781,7 +788,7 @@
           y = 50;
           y = drawTableHeader(doc, y, left, widths);
           doc.setFont("helvetica", "normal");
-          doc.setFontSize(8);
+          doc.setFontSize(10);
           doc.setTextColor(0, 0, 0);
         }
 
@@ -796,7 +803,7 @@
         let x = left;
         values.forEach((cell, index) => {
           doc.rect(x, y, widths[index], rowHeight);
-          doc.text(cell, x + widths[index] / 2, y + 13, { align: "center" });
+          doc.text(cell, x + 7, y + 14);
           x += widths[index];
         });
         y += rowHeight;
@@ -810,13 +817,13 @@
       doc.setFont("helvetica", "bold");
       doc.setFontSize(11);
       doc.text(`Cuota mensual: ${moneda.format(result.cuota)}`, left, y);
-      y += 78;
+      y += 85;
 
       doc.setFont("helvetica", "normal");
-      doc.setFontSize(9);
+      doc.setFontSize(10);
       doc.text("______________________________", 165, y, { align: "center" });
       doc.text("______________________________", 445, y, { align: "center" });
-      y += 22;
+      y += 17;
       doc.text("Firma del cliente", 165, y, { align: "center" });
       doc.text("Firma del empleado", 445, y, { align: "center" });
 
@@ -826,9 +833,9 @@
     const unidades = ["", "uno", "dos", "tres", "cuatro", "cinco", "seis", "siete", "ocho", "nueve"];
     const especiales = {
       10: "diez", 11: "once", 12: "doce", 13: "trece", 14: "catorce", 15: "quince",
-      16: "dieciseis", 17: "diecisiete", 18: "dieciocho", 19: "diecinueve",
-      20: "veinte", 21: "veintiuno", 22: "veintidos", 23: "veintitres", 24: "veinticuatro",
-      25: "veinticinco", 26: "veintiseis", 27: "veintisiete", 28: "veintiocho", 29: "veintinueve"
+      16: "dieciséis", 17: "diecisiete", 18: "dieciocho", 19: "diecinueve",
+      20: "veinte", 21: "veintiuno", 22: "veintidós", 23: "veintitrés", 24: "veinticuatro",
+      25: "veinticinco", 26: "veintiséis", 27: "veintisiete", 28: "veintiocho", 29: "veintinueve"
     };
     const decenas = ["", "", "veinte", "treinta", "cuarenta", "cincuenta", "sesenta", "setenta", "ochenta", "noventa"];
     const centenas = ["", "ciento", "doscientos", "trescientos", "cuatrocientos", "quinientos", "seiscientos", "setecientos", "ochocientos", "novecientos"];
@@ -859,18 +866,18 @@
       const rest = n % 1000;
       const parts = [];
 
-      if (millions) parts.push(millions === 1 ? "un millon" : `${numberToSpanish(millions)} millones`);
+      if (millions) parts.push(millions === 1 ? "un millón" : `${numberToSpanish(millions)} millones`);
       if (thousands) parts.push(thousands === 1 ? "mil" : `${numberToSpanishUnderThousand(thousands)} mil`);
       if (rest) parts.push(numberToSpanishUnderThousand(rest));
       return parts.join(" ");
     }
 
     function upperSpanish(number) {
-      return numberToSpanish(number).toUpperCase();
+      return numberToSpanish(number).toLocaleUpperCase("es-DO");
     }
 
     function formatLegalMoney(value) {
-      return `RD$ ${Number(value).toLocaleString("en-US", { minimumFractionDigits: 2, maximumFractionDigits: 2 })}`;
+      return `RD$${Number(value).toLocaleString("en-US", { minimumFractionDigits: 2, maximumFractionDigits: 2 })}`;
     }
 
     function legalDay(date) {
@@ -878,132 +885,284 @@
     }
 
     function legalYear(date) {
-      return `${upperSpanish(date.getFullYear()).replace("UN MIL", "MIL")} (${date.getFullYear()})`;
+      return `${titleCaseSpanish(numberToSpanish(date.getFullYear()).replace("un mil", "mil"))} (${date.getFullYear()})`;
     }
 
     function legalFullDate(date) {
-      return `a los ${legalDay(date)} dias de ${meses[date.getMonth()]} del ano ${legalYear(date)}`;
+      return `a los ${legalDay(date)} días de ${meses[date.getMonth()]} del año ${legalYear(date)}`;
     }
 
     function legalMonthlyDay(date) {
-      return `los dias ${legalDay(date)} de cada mes`;
+      return `los días ${legalDay(date)} de cada mes`;
     }
 
-    function addWrappedParagraph(doc, text, x, y, maxWidth, lineHeight, options = {}) {
-      doc.setFont("helvetica", options.bold ? "bold" : "normal");
-      doc.setFontSize(options.size || 9.5);
+    function titleCaseSpanish(text) {
+      return String(text).replace(/\p{L}+/gu, (word) => (
+        word.charAt(0).toLocaleUpperCase("es-DO") + word.slice(1)
+      ));
+    }
+
+    function segmentText(text, bold = false) {
+      return { text, bold };
+    }
+
+    function drawRichParagraph(doc, segments, x, y, maxWidth, fontSize, lineHeight, align = "justify") {
+      const spaceWidth = () => doc.getTextWidth("n") * 0.7;
+      const lines = [];
+      let line = [];
+      let lineWidth = 0;
+
+      function flushLine() {
+        lines.push({ parts: line, width: lineWidth });
+        line = [];
+        lineWidth = 0;
+      }
+
+      doc.setFontSize(fontSize);
       doc.setTextColor(0, 0, 0);
-      const lines = doc.splitTextToSize(text, maxWidth);
-      lines.forEach((line) => {
-        if (y > 735) {
-          doc.addPage();
-          y = 55;
+
+      segments.forEach((segment) => {
+        const words = String(segment.text).split(/\s+/).filter(Boolean);
+        words.forEach((word) => {
+          doc.setFont("times", segment.bold ? "bold" : "normal");
+          if (/^[,.;:]/.test(word) && line.length) {
+            line[line.length - 1].text += word;
+            lineWidth += doc.getTextWidth(word);
+            return;
+          }
+
+          const wordWidth = doc.getTextWidth(word);
+          const nextWidth = line.length ? lineWidth + spaceWidth() + wordWidth : wordWidth;
+          if (nextWidth > maxWidth && line.length) flushLine();
+          line.push({ text: word, bold: segment.bold });
+          lineWidth = line.length === 1 ? wordWidth : lineWidth + spaceWidth() + wordWidth;
+        });
+      });
+
+      if (line.length) flushLine();
+
+      lines.forEach((currentLine, lineIndex) => {
+        if (align === "justify") {
+          const naturalGap = spaceWidth();
+          const shouldJustify = lineIndex < lines.length - 1 && currentLine.parts.length > 1;
+          const gap = shouldJustify
+            ? Math.max(naturalGap, naturalGap + ((maxWidth - currentLine.width) / (currentLine.parts.length - 1)))
+            : naturalGap;
+          let cursor = x;
+
+          currentLine.parts.forEach((part, index) => {
+            doc.setFont("times", part.bold ? "bold" : "normal");
+            doc.text(part.text, cursor, y);
+            cursor += doc.getTextWidth(part.text);
+            if (index < currentLine.parts.length - 1) cursor += gap;
+          });
+
+          y += lineHeight;
+          return;
         }
-        doc.text(line, x, y, { align: options.align || "justify", maxWidth });
+
+        const groups = [];
+        currentLine.parts.forEach((part) => {
+          const last = groups[groups.length - 1];
+          if (last && last.bold === part.bold) {
+            last.text += ` ${part.text}`;
+          } else {
+            groups.push({ ...part });
+          }
+        });
+
+        const groupWidth = groups.reduce((total, group) => {
+          doc.setFont("times", group.bold ? "bold" : "normal");
+          return total + doc.getTextWidth(group.text);
+        }, 0);
+        const shouldJustify = align === "justify" && lineIndex < lines.length - 1 && groups.length > 1;
+        const naturalGap = spaceWidth();
+        const gap = shouldJustify
+          ? Math.max(naturalGap, naturalGap + ((maxWidth - groupWidth) / (groups.length - 1)))
+          : naturalGap;
+        const totalWidth = groupWidth + (gap * Math.max(groups.length - 1, 0));
+        let cursor = align === "center" ? x + ((maxWidth - totalWidth) / 2) : x;
+
+        groups.forEach((part, index) => {
+          doc.setFont("times", part.bold ? "bold" : "normal");
+          doc.text(part.text, cursor, y);
+          cursor += doc.getTextWidth(part.text);
+          if (index < groups.length - 1) cursor += gap;
+        });
+
         y += lineHeight;
       });
+
       return y;
     }
 
     async function buildPromissoryNotePdf(data, result) {
-      if (!data.cedula) throw new Error("Debe ingresar la cedula del cliente para generar el pagare.");
-      if (!data.direccion) throw new Error("Debe ingresar la direccion del cliente para generar el pagare.");
+      if (!data.cedula) throw new Error("Debe ingresar la cédula del cliente para generar el pagaré.");
+      if (!data.direccion) throw new Error("Debe ingresar la dirección del cliente para generar el pagaré.");
 
       const { jsPDF } = window.jspdf;
-      const doc = new jsPDF({ orientation: "portrait", unit: "pt", format: "letter" });
-      const logo = await getLogoDataUrl();
-      const x = 54;
-      const maxWidth = 504;
-      let y = 48;
+      const doc = new jsPDF({ orientation: "portrait", unit: "pt", format: "legal" });
+      const x = 66;
+      const maxWidth = 480;
+      const bodySize = 10.35;
+      const lineHeight = 11.65;
+      let y = 56;
 
-      if (logo) {
-        try {
-          doc.addImage(logo, "PNG", 246, y, 120, 67);
-          y += 78;
-        } catch (error) {
-          y += 8;
-        }
-      }
+      doc.setFont("times", "bold");
+      doc.setFontSize(13.5);
+      doc.text("EN NOMBRE DE LA REPÚBLICA", 306, y, { align: "center" });
+      y += 15;
+      doc.text("PAGARÉ NOTARIAL", 306, y, { align: "center" });
+      y += 32;
 
-      doc.setFont("helvetica", "bold");
-      doc.setFontSize(11);
-      doc.text("EN NOMBRE DE LA REPUBLICA", x, y);
-      doc.text("PAGARE NOTARIAL", 558, y, { align: "right" });
-      y += 25;
+      doc.setFontSize(12);
+      doc.text("Acto  No.____________________ (        )", x, y);
+      doc.text("Folio No.____________________ (        )", 358, y);
+      y += 12.5;
 
-      doc.setFont("helvetica", "normal");
-      doc.setFontSize(9.5);
-      doc.text("Acto No. _______________ (       )", x, y);
-      doc.text("Folio No. __________________ (       )", 558, y, { align: "right" });
-      y += 22;
-
-      const cliente = data.cliente.toUpperCase();
+      const cliente = data.cliente.toLocaleUpperCase("es-DO");
       const cedula = data.cedula;
       const direccion = data.direccion;
       const montoLetras = `${upperSpanish(data.monto)} PESOS`;
       const cuotasLetras = upperSpanish(data.cuotas);
       const tasaLetras = Number.isInteger(data.tasa) ? numberToSpanish(data.tasa) : String(data.tasa);
       const fechaTermino = result.fechaTermino;
+      const fechaActo = new Date();
       const acreedor = "KELVI GABRIEL FERMIN MOREL";
 
       const body = [
-        `En la ciudad de Laguna Salada, Provincia Valverde, Republica Dominicana, ${legalFullDate(data.fechaInicio)}. Por ante mi, LIC. KELVIN ALEXANDER VENTURA GONZALEZ, Notario Publico de los del Numero para el Municipio de Laguna Salada, colegiatura No. 7589, de nacionalidad dominicana, mayor de edad, abogado, provisto de la cedula de identidad y electoral No. 092-0014090-4, con estudio profesional abierto en la calle Duarte esquina Quirino Acosta No. 97 de esta ciudad de Laguna Salada, encontrandome en mi despacho y en el regular ejercicio de mis funciones, COMPARECIO libre y voluntariamente, el senor ${cliente}, de nacionalidad dominicana, mayor de edad, portador de la Cedula de Identidad y Electoral Numero ${cedula}, domiciliado y residente en ${direccion}, en su calidad de DEUDOR y ME HA DECLARADO bajo la fe del juramento lo siguiente:`,
-        `PRIMERO: Que se reconoce por medio del presente acto, DEUDOR, del senor ${acreedor}, de nacionalidad dominicana, mayor de edad, de ocupacion estudiante, portador de la cedula de identidad y electoral No. 402-2002338-2, domiciliado y residente en la Calle Eclipse, Sol de Luz, casa No. 5, sector Santa Cruz, del municipio Santo Domingo Norte, Republica Dominicana y accidentalmente en el Municipio de Laguna Salada, por la suma de ${montoLetras} (${formatLegalMoney(data.monto)}), suma esta que pagara en ${cuotasLetras} (${data.cuotas}) cuotas mensuales ${legalMonthlyDay(data.fechaInicio)} a partir de la firma del presente acto, con vencimiento el dia ${legalDay(fechaTermino)} de ${meses[fechaTermino.getMonth()].toUpperCase()} del ano ${fechaTermino.getFullYear()}, y generara un ${tasaLetras} por ciento (${data.tasa}%) de interes mensual.`,
-        `SEGUNDO: Que el senor ${cliente}, constituye y acepta que la firma de este acto esta basada sobre un pagare notarial en favor del senor ${acreedor}.`,
-        `TERCERO: El presente pagare notarial quedara resuelto de pleno derecho y exigible en su totalidad de la deuda al beneficio del termino del presente pagare y dejado de pagar, quedando EL ACREEDOR, senor ${acreedor}, en tiempo habil para ejecutar el presente pagare con todas sus consecuencias legales, sin previa gestion judicial o extrajudicial alguna sobre los bienes activos y pasivos del DEUDOR, senor ${cliente}.`,
-        `CUARTO: EL DEUDOR, senor ${cliente}, autoriza y faculta al ACREEDOR, senor ${acreedor}, para que en caso de incumplimiento de este pagare notarial pueda apropiarse de cualquier bien mueble o inmueble que este en su mano o en manos de un tercero, para con el mismo cubrir el pago del capital, accesorios o derechos que nacieran de toda deuda vencida de este contrato.`,
-        `QUINTO: Las partes han decidido dar su consentimiento a fin de que este pagare notarial tenga su condicion de titulo ejecutorio con la misma fuerza que una sentencia judicial con autoridad de la cosa irrevocablemente juzgada, renunciando al fuero de domicilio y comprometiendo todos los bienes presentes y futuros para el cumplimiento del presente pagare.`,
-        `SEXTO: Para lo no estipulado en el presente pagare notarial, las partes se remiten al derecho comun.`,
-        `SEPTIMO: EL DEUDOR, senor ${cliente}, acepta que para los fines y consecuencias legales del presente acto reconoce la operatividad del articulo 545 del Codigo de Procedimiento Civil de la Republica Dominicana.`,
-        `OCTAVO: EL DEUDOR, senor ${cliente}, avala como buenos y validos todos los ordinales senalados anteriormente, contentivos en las obligaciones contraidas con el ACREEDOR, senor ${acreedor}.`,
-        `HECHO, REDACTADO, TRANSCRITO Y FIRMADO en dos originales, en mi presencia, y en presencia de los senores MIGUEL LIRIANO, de nacionalidad dominicano, mayor de edad, soltero, portador de la cedula de identidad y electoral No. 033-0021439-6, domiciliado y residente en el Municipio de Esperanza, Provincia Valverde, Republica Dominicana y BELGICA RAMONA COLON, de nacionalidad dominicana, mayor de edad, portadora de la cedula de identidad y electoral Numero 033-0018208-0, domiciliada y residente en el Municipio de Esperanza, Provincia Valverde, Republica Dominicana, acto este al cual he dado lectura en alta voz en presencia de los comparecientes y testigos, quienes despues de aprobarlo, lo han firmado ante mi y junto conmigo, considerandolo BUENO Y VALIDO, por la suma de ${montoLetras} (${formatLegalMoney(data.monto)}). Asi lo dijeron ante mi Notario Publico. En testimonio de lo que antecede se redacta el presente Acto, al cual le he dado lectura en alta voz a los comparecientes, quienes despues de encontrarlo conforme proceden a firmarlo juntos conmigo y ante mi, Notario Publico, por lo cual certifico y doy fe.`
+        [
+          segmentText(`En la ciudad de Laguna Salada, Provincia Valverde, República Dominicana, ${legalFullDate(fechaActo)}. Por ante mí, `),
+          segmentText("LIC. KELVIN ALEXANDER VENTURA GONZALEZ", true),
+          segmentText(`, Notario Público de los del Número para el Municipio de Laguna salada, colegiatura No.7589, de nacionalidad dominicana, mayor de edad, abogado, provisto de la cédula de identidad y electoral No. 092-0014090-4, con estudio profesional abierto en la calle Duarte esquina Quirino Acosta No. 97 de esta ciudad de Laguna Salada, encontrándome en mi despacho y en el regular ejercicio de mis funciones, `),
+          segmentText("COMPARECIÓ", true),
+          segmentText(` libre y voluntariamente, el señor `),
+          segmentText(cliente, true),
+          segmentText(`, de nacionalidad dominicana, mayor de edad, portador de la Cédula de Identidad y Electoral Número `),
+          segmentText(cedula, true),
+          segmentText(`, domiciliado y residente en `),
+          segmentText(direccion, true),
+          segmentText(", en su calidad de "),
+          segmentText("DEUDOR", true),
+          segmentText(" y ME HA DECLARADO bajo la fe del juramento lo siguiente:")
+        ],
+        [
+          segmentText("PRIMERO: ", true),
+          segmentText("Que se reconoce por medio del presente acto, "),
+          segmentText("DEUDOR", true),
+          segmentText(", del señor "),
+          segmentText(acreedor, true),
+          segmentText(`, de nacionalidad dominicana, Mayor de edad, de ocupación estudiante, portador de la cédula de identidad y electoral No. 402-2002338-2, domiciliado y residente en la Calle eclipse, sol de luz, casa No. 5, sector Santa Cruz, del municipio Santo Domingo Norte República Dominicana y accidentalmente en el Municipio de Laguna Salada, por la suma de `),
+          segmentText(`${montoLetras} (${formatLegalMoney(data.monto)})`, true),
+          segmentText(`, suma esta que pagará en `),
+          segmentText(`${cuotasLetras}(${data.cuotas})`, true),
+          segmentText(` cuotas mensuales ${legalMonthlyDay(data.fechaInicio)} a partir de la firma del presente acto, con vencimiento el día ${legalDay(fechaTermino)} de ${titleCaseSpanish(meses[fechaTermino.getMonth()])} del año ${fechaTermino.getFullYear()}, y generará un ${tasaLetras} por ciento (${data.tasa}%) de interés mensual.`)
+        ],
+        [
+          segmentText("SEGUNDO: ", true),
+          segmentText("Que el señor "),
+          segmentText(cliente, true),
+          segmentText(", constituye y acepta que la firma de este acto está basada sobre un pagaré notarial en favor del señor "),
+          segmentText(acreedor, true),
+          segmentText(";")
+        ],
+        [
+          segmentText("TERCERO: ", true),
+          segmentText("El presente pagaré notarial quedará resuelto de pleno derecho y exigible en su totalidad de la deuda al beneficio del término del presente pagaré y dejado de pagar, quedando "),
+          segmentText("EL ACREEDOR", true),
+          segmentText(", señor "),
+          segmentText(acreedor, true),
+          segmentText(", en tiempo hábil para ejecutar el presente pagaré con todas sus consecuencias legales, sin previa gestión judicial o extrajudicial alguna sobre los bienes activos y pasivos de el "),
+          segmentText("DEUDOR", true),
+          segmentText(", de el señor "),
+          segmentText(cliente, true),
+          segmentText(";")
+        ],
+        [
+          segmentText("CUARTO: ", true),
+          segmentText("EL DEUDOR", true),
+          segmentText(", el señor "),
+          segmentText(cliente, true),
+          segmentText(", autoriza y faculta al "),
+          segmentText("ACREEDOR", true),
+          segmentText(", señor "),
+          segmentText(acreedor, true),
+          segmentText(", para que en caso de incumplimiento de este pagaré notarial pueda apropiarse de cualquier bien mueble o inmueble, que esté en su mano o en manos de un tercero, para con el mismos cubrir el pago del capital, accesorios o derechos que nacieran de toda deuda vencida de este contrato;")
+        ],
+        [segmentText("QUINTO: ", true), segmentText("Las partes han decidido dar su consentimiento a fin de que este pagaré notarial tenga su condición de título ejecutorio con la misma fuerza que una sentencia judicial con autoridad de la cosa irrevocablemente juzgada, renunciando al fuero de domicilio y comprometiendo todos los bienes presentes y futuros para el cumplimiento del presente pagaré;")],
+        [segmentText("SEXTO: ", true), segmentText("Para lo no estipulado en el presente pagaré notarial, las partes se remiten al derecho común;")],
+        [
+          segmentText("SÉPTIMO: ", true),
+          segmentText("EL DEUDOR", true),
+          segmentText(", el señor "),
+          segmentText(cliente, true),
+          segmentText(", acepta que para los fines y consecuencias legales del presente acto reconoce la operatividad del artículo 545 del Código de Procedimiento Civil de la República Dominicana.")
+        ],
+        [
+          segmentText("OCTAVO: ", true),
+          segmentText("EL DEUDOR", true),
+          segmentText(" el señor "),
+          segmentText(cliente, true),
+          segmentText(", avala como buenos y válidos todos los ordinales señalados anteriormente, contentivos en las obligaciones contraídas con el "),
+          segmentText("ACREEDOR", true),
+          segmentText(", señor "),
+          segmentText(acreedor, true),
+          segmentText(".")
+        ],
+        [
+          segmentText("HECHO, REDACTADO, TRANSCRITO Y FIRMADO", true),
+          segmentText(" en dos originales, en mi presencia, y en presencia de los señores "),
+          segmentText("MIGUEL LIRIANO", true),
+          segmentText(", de nacionalidad Dominicano, Mayor de edad, soltero, portador de la cédula de identidad y electoral No. 033-0021439-6, domiciliado y residente en el Municipio de Esperanza, Provincia Valverde, República Dominicana y "),
+          segmentText("BÉLGICA RAMONA COLÓN", true),
+          segmentText(`, de nacionalidad dominicana, mayor de edad, portadora de la cédula de identidad y electoral Número 033-0018208-0, domiciliado y residente,en el Municipio de Esperanza, Provincia Valverde, República Dominicana, acto éste al cual he dado lectura en alta voz en presencia de los comparecientes y testigos, quienes después de aprobarlo, lo han firmado ante mí y junto conmigo, considerándolo `),
+          segmentText("BUENO Y VÁLIDO", true),
+          segmentText(", por la suma de "),
+          segmentText(`${montoLetras} (${formatLegalMoney(data.monto)})`, true),
+          segmentText(". Así lo dijeron ante mí Notario Público. En testimonio de lo que antecede se redacta el presente Acto, al cual le he dado lectura en alta voz a los comparecientes, quienes después de encontrarlo conforme proceden a firmarlo juntos conmigo y ante mí, Notario Público, Por lo cual certifico y doy fe. ------------------------")
+        ]
       ];
 
       body.forEach((paragraph) => {
-        y = addWrappedParagraph(doc, paragraph, x, y, maxWidth, 13);
-        y += 7;
+        y = drawRichParagraph(doc, paragraph, x, y, maxWidth, bodySize, lineHeight);
+        y += 0.3;
       });
 
-      if (y > 610) {
-        doc.addPage();
-        y = 90;
-      } else {
-        y += 28;
-      }
+      y = Math.min(Math.max(y + 22, 850), 884);
 
-      doc.setFont("helvetica", "normal");
-      doc.setFontSize(9.5);
-      doc.text("______________________________", 170, y, { align: "center" });
-      doc.text("______________________________", 442, y, { align: "center" });
-      y += 16;
-      doc.setFont("helvetica", "bold");
-      doc.text(cliente, 170, y, { align: "center" });
-      doc.text(acreedor, 442, y, { align: "center" });
-      y += 14;
-      doc.setFont("helvetica", "normal");
-      doc.text("DEUDOR", 170, y, { align: "center" });
-      doc.text("ACREEDOR", 442, y, { align: "center" });
-      y += 54;
+      doc.setFont("times", "normal");
+      doc.setFontSize(10.5);
+      doc.text("______________________________", 180, y, { align: "center" });
+      doc.text("______________________________", 432, y, { align: "center" });
+      y += 13;
+      doc.setFont("times", "bold");
+      doc.text(cliente, 180, y, { align: "center", maxWidth: 230 });
+      doc.text(acreedor, 432, y, { align: "center", maxWidth: 230 });
+      y += 12;
+      doc.text("DEUDOR", 180, y, { align: "center" });
+      doc.text("ACREEDOR", 432, y, { align: "center" });
+      y += 34;
 
-      doc.text("______________________________", 170, y, { align: "center" });
-      doc.text("______________________________", 442, y, { align: "center" });
-      y += 16;
-      doc.setFont("helvetica", "bold");
-      doc.text("MIGUEL LIRIANO", 170, y, { align: "center" });
-      doc.text("BELGICA RAMONA COLON", 442, y, { align: "center" });
-      y += 14;
-      doc.setFont("helvetica", "normal");
-      doc.text("Testigo", 170, y, { align: "center" });
-      doc.text("Testigo", 442, y, { align: "center" });
-      y += 66;
+      doc.setFont("times", "normal");
+      doc.text("______________________________", 180, y, { align: "center" });
+      doc.text("______________________________", 432, y, { align: "center" });
+      y += 13;
+      doc.setFont("times", "bold");
+      doc.text("MIGUEL LIRIANO", 180, y, { align: "center" });
+      doc.text("BELGICA RAMONA COLON", 432, y, { align: "center" });
+      y += 12;
+      doc.text("Testigo", 180, y, { align: "center" });
+      doc.text("Testigo", 432, y, { align: "center" });
+      y += 40;
 
+      doc.setFont("times", "normal");
       doc.text("___________________________________", 306, y, { align: "center" });
-      y += 16;
-      doc.setFont("helvetica", "bold");
-      doc.text("LIC. KELVIN ALEXANDER VENTURA GONZALEZ", 306, y, { align: "center" });
-      y += 14;
-      doc.setFont("helvetica", "normal");
-      doc.text("Notario Publico", 306, y, { align: "center" });
+      y += 13;
+      doc.setFont("times", "bold");
+      doc.text("LIC.KELVIN ALEXANDER VENTURA GONZALEZ", 306, y, { align: "center" });
+      y += 12;
+      doc.setFont("times", "normal");
+      doc.text("Notario Público", 306, y, { align: "center" });
 
       return doc.output("blob");
     }
